@@ -1,0 +1,502 @@
+
+
+Финальная документация
+Описание схем
+Схема базы данных OLTP
+users
+
+id (INT, PRIMARY KEY, AUTO INCREMENT): уникальный идентификатор пользователя
+name (VARCHAR): имя пользователя
+email (VARCHAR): электронная почта пользователя
+password (VARCHAR): пароль пользователя
+city (VARCHAR): город пользователя
+tags (VARCHAR): теги, связанные с пользователем
+rating (FLOAT): рейтинг пользователя
+created_at (TIMESTAMP): время создания записи
+clubs
+
+id (INT, PRIMARY KEY, AUTO INCREMENT): уникальный идентификатор клуба
+name (VARCHAR): название клуба
+country (VARCHAR): страна, где находится клуб
+city (VARCHAR): город, где находится клуб
+address (VARCHAR): адрес клуба
+tags (VARCHAR): теги, связанные с клубом
+rating (FLOAT): рейтинг клуба
+default_admin (VARCHAR): основной администратор клуба
+working_hours (VARCHAR): рабочие часы клуба
+created_at (TIMESTAMP): время создания записи
+computers
+
+id (INT, PRIMARY KEY, AUTO INCREMENT): уникальный идентификатор компьютера
+club_id (INT, FOREIGN KEY): идентификатор клуба
+name (VARCHAR): название компьютера
+characteristics (VARCHAR): характеристики компьютера
+created_at (TIMESTAMP): время создания записи
+games
+
+id (INT, PRIMARY KEY, AUTO INCREMENT): уникальный идентификатор игры
+computer_id (INT, FOREIGN KEY): идентификатор компьютера
+name (VARCHAR): название игры
+genre (VARCHAR): жанр игры
+description (VARCHAR): описание игры
+created_at (TIMESTAMP): время создания записи
+admin
+
+id (INT, PRIMARY KEY, AUTO INCREMENT): уникальный идентификатор администратора
+user_id (INT, FOREIGN KEY): идентификатор пользователя
+created_at (TIMESTAMP): время создания записи
+admin_club
+
+id (INT, PRIMARY KEY, AUTO INCREMENT): уникальный идентификатор связи
+master_id (INT, FOREIGN KEY): идентификатор администратора
+club_id (INT, FOREIGN KEY): идентификатор клуба
+created_at (TIMESTAMP): время создания записи
+bookings
+
+id (INT, PRIMARY KEY, AUTO INCREMENT): уникальный идентификатор бронирования
+user_id (INT, FOREIGN KEY): идентификатор пользователя
+computer_id (INT, FOREIGN KEY): идентификатор компьютера
+booking_date (TIMESTAMP): дата бронирования
+status (VARCHAR): статус бронирования (active, completed, canceled)
+created_at (TIMESTAMP): время создания записи
+reviews
+
+id (INT, PRIMARY KEY, AUTO INCREMENT): уникальный идентификатор отзыва
+user_id (INT, FOREIGN KEY): идентификатор пользователя
+club_id (INT, FOREIGN KEY): идентификатор клуба
+rating (INT): рейтинг (1-5)
+comment (TEXT): комментарий
+created_at (TIMESTAMP): время создания записи
+history
+
+id (INT, PRIMARY KEY, AUTO INCREMENT): уникальный идентификатор события
+club_id (INT, FOREIGN KEY): идентификатор клуба
+admin_id (INT, FOREIGN KEY): идентификатор администратора
+user_id (INT, FOREIGN KEY): идентификатор пользователя
+description (TEXT): описание события
+date_start (TIMESTAMP): начало события
+date_end (TIMESTAMP): окончание события
+computer_id (INT, FOREIGN KEY): идентификатор компьютера
+status (VARCHAR): статус события (completed, canceled)
+created_at (TIMESTAMP): время создания записи
+Схема базы данных OLAP
+Dim_Users
+
+User_Surrogate_Key (SERIAL, PRIMARY KEY): суррогатный ключ пользователя
+User_Natural_Key (INT): естественный ключ пользователя из OLTP системы
+Name (VARCHAR): имя пользователя
+Email (VARCHAR): электронная почта пользователя
+City (VARCHAR): город пользователя
+Tags (VARCHAR): теги пользователя
+Rating (FLOAT): рейтинг пользователя
+Effective_Date (TIMESTAMP): дата начала действия записи
+Expiration_Date (TIMESTAMP): дата окончания действия записи
+Is_Current (BOOLEAN): флаг актуальности записи
+UNIQUE (User_Natural_Key, Is_Current)
+Dim_Clubs
+
+Club_Key (SERIAL, PRIMARY KEY): суррогатный ключ клуба
+Club_Natural_Key (INT): естественный ключ клуба из OLTP системы
+Name (VARCHAR): название клуба
+Country (VARCHAR): страна клуба
+City (VARCHAR): город клуба
+Address (VARCHAR): адрес клуба
+Tags (VARCHAR): теги клуба
+Rating (FLOAT): рейтинг клуба
+UNIQUE (Club_Natural_Key)
+Dim_Computers
+
+Computer_Key (SERIAL, PRIMARY KEY): суррогатный ключ компьютера
+Computer_Natural_Key (INT): естественный ключ компьютера из OLTP системы
+Club_Key (INT, FOREIGN KEY): суррогатный ключ клуба
+Name (VARCHAR): название компьютера
+Characteristics (VARCHAR): характеристики компьютера
+UNIQUE (Computer_Natural_Key)
+Dim_Date
+
+Date_Key (SERIAL, PRIMARY KEY): суррогатный ключ даты
+Full_Date (DATE): полная дата
+Year (INT): год
+Quarter (INT): квартал
+Month (INT): месяц
+Day (INT): день
+Day_of_Week (INT): день недели
+Week_of_Year (INT): неделя года
+UNIQUE (Full_Date)
+Fact_Bookings
+
+Booking_Key (SERIAL, PRIMARY KEY): суррогатный ключ бронирования
+User_Key (INT, FOREIGN KEY): суррогатный ключ пользователя
+Computer_Key (INT, FOREIGN KEY): суррогатный ключ компьютера
+Date_Key (INT, FOREIGN KEY): суррогатный ключ даты
+Booking_Date (TIMESTAMP): дата бронирования
+Status (VARCHAR): статус бронирования
+Fact_Reviews
+
+Review_Key (SERIAL, PRIMARY KEY): суррогатный ключ отзыва
+User_Key (INT, FOREIGN KEY): суррогатный ключ пользователя
+Club_Key (INT, FOREIGN KEY): суррогатный ключ клуба
+Date_Key (INT, FOREIGN KEY): суррогатный ключ даты
+Rating (INT): рейтинг
+Comment (TEXT): комментарий
+Описание основных функций и процедур
+1. Основные функции и процедуры в OLAP
+Обновление Dim_Users (SCD Type 2)
+sql
+Copy code
+WITH New_Data AS (
+    SELECT id, name, email, city, tags, rating, NOW() AS Effective_Date, '9999-12-31'::TIMESTAMP AS Expiration_Date, TRUE AS Is_Current
+    FROM users
+),
+Expired_Data AS (
+    UPDATE Dim_Users
+    SET Expiration_Date = NOW(), Is_Current = FALSE
+    WHERE User_Natural_Key IN (SELECT id FROM New_Data)
+    AND Is_Current = TRUE
+    RETURNING *
+)
+INSERT INTO Dim_Users (User_Natural_Key, Name, Email, City, Tags, Rating, Effective_Date, Expiration_Date, Is_Current)
+SELECT id, name, email, city, tags, rating, Effective_Date, Expiration_Date, Is_Current
+FROM New_Data
+ON CONFLICT (User_Natural_Key, Is_Current) DO NOTHING;
+Обновление Dim_Clubs
+sql
+Copy code
+INSERT INTO Dim_Clubs (Club_Natural_Key, Name, Country, City, Address, Tags, Rating)
+SELECT id, name, country, city, address, tags, rating
+FROM clubs
+ON CONFLICT (Club_Natural_Key) DO NOTHING;
+Обновление Dim_Computers
+sql
+Copy code
+INSERT INTO Dim_Computers (Computer_Natural_Key, Club_Key, Name, Characteristics)
+SELECT c.id, d.Club_Key, c.name, c.characteristics
+FROM computers c
+JOIN Dim_Clubs d ON c.club_id = d.Club_Natural_Key
+ON CONFLICT (Computer_Natural_Key) DO NOTHING;
+Обновление Dim_Date
+sql
+Copy code
+INSERT INTO Dim_Date (Full_Date, Year, Quarter, Month, Day, Day_of_Week, Week_of_Year)
+VALUES
+    ('2024-06-01', 2024, 2, 6, 1, 7, 22),
+    ('2024-06-02', 2024, 2, 6, 2, 1, 23),
+    ('2024-06-03', 2024, 2, 6, 3, 2, 23)
+ON CONFLICT (Full_Date) DO NOTHING;
+Обновление Fact_Bookings
+sql
+Copy code
+INSERT INTO Fact_Bookings (User_Key, Computer_Key, Date_Key, Booking_Date, Status)
+SELECT u.User_Surrogate_Key, c.Computer_Key, d.Date_Key, b.booking_date, b.status
+FROM bookings b
+JOIN Dim_Users u ON b.user_id = u.User_Natural_Key
+JOIN Dim_Computers c ON b.computer_id = c.Computer_Natural_Key
+JOIN Dim_Date d ON DATE(b.booking_date) = d.Full_Date
+ON CONFLICT DO NOTHING;
+Обновление Fact_Reviews
+sql
+Copy code
+INSERT INTO Fact_Reviews (User_Key, Club_Key, Date_Key, Rating, Comment)
+SELECT u.User_Surrogate_Key, c.Club_Key, d.Date_Key, r.rating, r.comment
+FROM reviews r
+JOIN Dim_Users u ON r.user_id = u.User_Natural_Key
+JOIN Dim_Clubs c ON r.club_id = c.Club_Natural_Key
+JOIN Dim_Date d ON DATE(r.created_at) = d.Full_Date
+ON CONFLICT DO NOTHING;
+Инструкции по запуску скриптов для загрузки данных и ETL-процесса
+1. Запуск скриптов для создания таблиц
+Запустите следующие команды в вашем инструменте для работы с базой данных PostgreSQL (например, pgAdmin или psql).
+
+Создание таблиц OLTP
+sql
+Copy code
+-- Создание таблиц OLTP
+-- Таблица пользователей
+CREATE TABLE users (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(255),
+    email VARCHAR(255),
+    password VARCHAR(255),
+    city VARCHAR(255),
+    tags VARCHAR(255),
+    rating FLOAT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Таблица клубов
+CREATE TABLE clubs (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(255),
+    country VARCHAR(255),
+    city VARCHAR(255),
+    address VARCHAR(255),
+    tags VARCHAR(255),
+    rating FLOAT,
+    default_admin VARCHAR(255),
+    working_hours VARCHAR(255),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Таблица компьютеров
+CREATE TABLE computers (
+    id SERIAL PRIMARY KEY,
+    club_id INT REFERENCES clubs(id),
+    name VARCHAR(255),
+    characteristics VARCHAR(255),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Таблица игр
+CREATE TABLE games (
+    id SERIAL PRIMARY KEY,
+    computer_id INT REFERENCES computers(id),
+    name VARCHAR(255),
+    genre VARCHAR(255),
+    description VARCHAR(255),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Таблица администраторов
+CREATE TABLE admin (
+    id SERIAL PRIMARY KEY,
+    user_id INT REFERENCES users(id),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Таблица связи администраторов и клубов
+CREATE TABLE admin_club (
+    id SERIAL PRIMARY KEY,
+    master_id INT REFERENCES admin(id),
+    club_id INT REFERENCES clubs(id),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Таблица бронирований
+CREATE TABLE bookings (
+    id SERIAL PRIMARY KEY,
+    user_id INT REFERENCES users(id),
+    computer_id INT REFERENCES computers(id),
+    booking_date TIMESTAMP,
+    status VARCHAR(255),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Таблица отзывов
+CREATE TABLE reviews (
+    id SERIAL PRIMARY KEY,
+    user_id INT REFERENCES users(id),
+    club_id INT REFERENCES clubs(id),
+    rating INT,
+    comment TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Таблица истории событий
+CREATE TABLE history (
+    id SERIAL PRIMARY KEY,
+    club_id INT REFERENCES clubs(id),
+    admin_id INT REFERENCES admin(id),
+    user_id INT REFERENCES users(id),
+    description TEXT,
+    date_start TIMESTAMP,
+    date_end TIMESTAMP,
+    computer_id INT REFERENCES computers(id),
+    status VARCHAR(255),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+Создание таблиц OLAP
+sql
+Copy code
+-- Создание таблиц измерений и фактов для OLAP
+
+-- Таблица Dim_Users
+CREATE TABLE Dim_Users (
+    User_Surrogate_Key SERIAL PRIMARY KEY,
+    User_Natural_Key INT NOT NULL,
+    Name VARCHAR(255),
+    Email VARCHAR(255),
+    City VARCHAR(255),
+    Tags VARCHAR(255),
+    Rating FLOAT,
+    Effective_Date TIMESTAMP,
+    Expiration_Date TIMESTAMP,
+    Is_Current BOOLEAN,
+    UNIQUE (User_Natural_Key, Is_Current)
+);
+
+-- Таблица Dim_Clubs
+CREATE TABLE Dim_Clubs (
+    Club_Key SERIAL PRIMARY KEY,
+    Club_Natural_Key INT NOT NULL,
+    Name VARCHAR(255),
+    Country VARCHAR(255),
+    City VARCHAR(255),
+    Address VARCHAR(255),
+    Tags VARCHAR(255),
+    Rating FLOAT,
+    UNIQUE (Club_Natural_Key)
+);
+
+-- Таблица Dim_Computers
+CREATE TABLE Dim_Computers (
+    Computer_Key SERIAL PRIMARY KEY,
+    Computer_Natural_Key INT NOT NULL,
+    Club_Key INT,
+    Name VARCHAR(255),
+    Characteristics VARCHAR(255),
+    UNIQUE (Computer_Natural_Key),
+    FOREIGN KEY (Club_Key) REFERENCES Dim_Clubs(Club_Key)
+);
+
+-- Таблица Dim_Date
+CREATE TABLE Dim_Date (
+    Date_Key SERIAL PRIMARY KEY,
+    Full_Date DATE NOT NULL,
+    Year INT,
+    Quarter INT,
+    Month INT,
+    Day INT,
+    Day_of_Week INT,
+    Week_of_Year INT,
+    UNIQUE (Full_Date)
+);
+
+-- Таблица Fact_Bookings
+CREATE TABLE Fact_Bookings (
+    Booking_Key SERIAL PRIMARY KEY,
+    User_Key INT,
+    Computer_Key INT,
+    Date_Key INT,
+    Booking_Date TIMESTAMP,
+    Status VARCHAR(255),
+    FOREIGN KEY (User_Key) REFERENCES Dim_Users(User_Surrogate_Key),
+    FOREIGN KEY (Computer_Key) REFERENCES Dim_Computers(Computer_Key),
+    FOREIGN KEY (Date_Key) REFERENCES Dim_Date(Date_Key)
+);
+
+-- Таблица Fact_Reviews
+CREATE TABLE Fact_Reviews (
+    Review_Key SERIAL PRIMARY KEY,
+    User_Key INT,
+    Club_Key INT,
+    Date_Key INT,
+    Rating INT,
+    Comment TEXT,
+    FOREIGN KEY (User_Key) REFERENCES Dim_Users(User_Surrogate_Key),
+    FOREIGN KEY (Club_Key) REFERENCES Dim_Clubs(Club_Key),
+    FOREIGN KEY (Date_Key) REFERENCES Dim_Date(Date_Key)
+);
+2. Запуск скриптов для загрузки данных
+Запустите следующие команды в вашем инструменте для работы с базой данных PostgreSQL (например, pgAdmin или psql).
+
+Загрузка данных в таблицы OLTP
+sql
+Copy code
+-- Загрузка данных в таблицы OLTP
+
+-- Таблица users
+INSERT INTO users (name, email, password, city, tags, rating, created_at) VALUES
+('John Doe', 'john.doe@example.com', 'pass123', 'New York', 'tag1,tag2', 4.5, '2024-06-01 12:00:00'),
+-- Добавьте остальные данные пользователей
+
+-- Таблица clubs
+INSERT INTO clubs (name, country, city, address, tags, rating, default_admin, working_hours, created_at) VALUES
+('Cyber Club', 'USA', 'San Francisco', '123 Main St', 'cyber,gaming', 4.8, 'admin123', '10:00-22:00', '2024-06-01 12:00:00'),
+-- Добавьте остальные данные клубов
+
+-- Таблица computers
+INSERT INTO computers (club_id, name, characteristics, created_at) VALUES
+(1, 'Gaming PC 1', 'Intel i9, 32GB RAM, RTX 3080', '2024-06-01 12:00:00'),
+-- Добавьте остальные данные компьютеров
+
+-- Таблица games
+INSERT INTO games (computer_id, name, genre, description, created_at) VALUES
+(1, 'Game A', 'Action', 'An action-packed game.', '2024-06-01 12:00:00'),
+-- Добавьте остальные данные игр
+
+-- Таблица admin
+INSERT INTO admin (user_id, created_at) VALUES
+(1, '2024-06-01 12:00:00'),
+-- Добавьте остальные данные администраторов
+
+-- Таблица admin_club
+INSERT INTO admin_club (master_id, club_id, created_at) VALUES
+(1, 1, '2024-06-01 12:00:00'),
+-- Добавьте остальные данные связей администраторов и клубов
+
+-- Таблица bookings
+INSERT INTO bookings (user_id, computer_id, booking_date, status, created_at) VALUES
+(1, 1, '2024-06-10 14:00:00', 'active', '2024-06-01 12:00:00'),
+-- Добавьте остальные данные бронирований
+
+-- Таблица reviews
+INSERT INTO reviews (user_id, club_id, rating, comment, created_at) VALUES
+(1, 1, 5, 'Great club!', '2024-06-01 12:00:00'),
+-- Добавьте остальные данные отзывов
+
+-- Таблица history
+INSERT INTO history (club_id, admin_id, user_id, description, date_start, date_end, computer_id, status, created_at) VALUES
+(1, 1, 1, 'User booked a PC.', '2024-06-10 14:00:00', '2024-06-10 16:00:00', 1, 'completed', '2024-06-01 12:00:00'),
+-- Добавьте остальные данные истории событий
+3. Запуск ETL-процесса
+Запустите следующие команды в вашем инструменте для работы с базой данных PostgreSQL (например, pgAdmin или psql).
+
+sql
+Copy code
+-- ETL процесс для обновления данных в таблицах измерений и фактов
+
+-- Обновление Dim_Users (SCD Type 2)
+WITH New_Data AS (
+    SELECT id, name, email, city, tags, rating, NOW() AS Effective_Date, '9999-12-31'::TIMESTAMP AS Expiration_Date, TRUE AS Is_Current
+    FROM users
+),
+Expired_Data AS (
+    UPDATE Dim_Users
+    SET Expiration_Date = NOW(), Is_Current = FALSE
+    WHERE User_Natural_Key IN (SELECT id FROM New_Data)
+    AND Is_Current = TRUE
+    RETURNING *
+)
+INSERT INTO Dim_Users (User_Natural_Key, Name, Email, City, Tags, Rating, Effective_Date, Expiration_Date, Is_Current)
+SELECT id, name, email, city, tags, rating, Effective_Date, Expiration_Date, Is_Current
+FROM New_Data
+ON CONFLICT (User_Natural_Key, Is_Current) DO NOTHING;
+
+-- Обновление Dim_Clubs
+INSERT INTO Dim_Clubs (Club_Natural_Key, Name, Country, City, Address, Tags, Rating)
+SELECT id, name, country, city, address, tags, rating
+FROM clubs
+ON CONFLICT (Club_Natural_Key) DO NOTHING;
+
+-- Обновление Dim_Computers
+INSERT INTO Dim_Computers (Computer_Natural_Key, Club_Key, Name, Characteristics)
+SELECT c.id, d.Club_Key, c.name, c.characteristics
+FROM computers c
+JOIN Dim_Clubs d ON c.club_id = d.Club_Natural_Key
+ON CONFLICT (Computer_Natural_Key) DO NOTHING;
+
+-- Обновление Dim_Date (пример)
+INSERT INTO Dim_Date (Full_Date, Year, Quarter, Month, Day, Day_of_Week, Week_of_Year)
+VALUES
+    ('2024-06-01', 2024, 2, 6, 1, 7, 22),
+    ('2024-06-02', 2024, 2, 6, 2, 1, 23),
+    ('2024-06-03', 2024, 2, 6, 3, 2, 23)
+ON CONFLICT (Full_Date) DO NOTHING;
+
+-- Обновление Fact_Bookings
+INSERT INTO Fact_Bookings (User_Key, Computer_Key, Date_Key, Booking_Date, Status)
+SELECT u.User_Surrogate_Key, c.Computer_Key, d.Date_Key, b.booking_date, b.status
+FROM bookings b
+JOIN Dim_Users u ON b.user_id = u.User_Natural_Key
+JOIN Dim_Computers c ON b.computer_id = c.Computer_Natural_Key
+JOIN Dim_Date d ON DATE(b.booking_date) = d.Full_Date
+ON CONFLICT DO NOTHING;
+
+-- Обновление Fact_Reviews
+INSERT INTO Fact_Reviews (User_Key, Club_Key, Date_Key, Rating, Comment)
+SELECT u.User_Surrogate_Key, c.Club_Key, d.Date_Key, r.rating, r.comment
+FROM reviews r
+JOIN Dim_Users u ON r.user_id = u.User_Natural_Key
+JOIN Dim_Clubs c ON r.club_id = c.Club_Natural_Key
+JOIN Dim_Date d ON DATE(r.created_at) = d.Full_Date
+ON CONFLICT DO NOTHING;

@@ -1,0 +1,11 @@
+id,user_id,club_id,rating,comment,created_at
+1,1,1,5,"Great club!",2024-06-01 12:00:00
+2,2,2,4,"Good club.",2024-06-01 12:00:00
+3,3,3,3,"Average club.",2024-06-01 12:00:00
+4,4,4,5,"Excellent service!",2024-06-01 12:00:00
+5,5,5,4,"Nice atmosphere.",2024-06-01 12:00:00
+6,6,6,3,"Could be better.",2024-06-01 12:00:00
+7,7,7,5,"Loved it!",2024-06-01 12:00:00
+8,8,8,4,"Very good.",2024-06-01 12:00:00
+9,9,9,3,"It's okay.",2024-06-01 12:00:00
+10,10,10,5,"Amazing experience!",2024-06-01 12:00:00

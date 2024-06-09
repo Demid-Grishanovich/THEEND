@@ -1,0 +1,11 @@
+id,club_id,name,characteristics,created_at
+1,1,Gaming PC 1,"Intel i9, 32GB RAM, RTX 3080",2024-06-01 12:00:00
+2,1,Gaming PC 2,"Intel i7, 16GB RAM, RTX 3070",2024-06-01 12:00:00
+3,2,Gaming PC 1,"AMD Ryzen 9, 32GB RAM, RX 6800",2024-06-01 12:00:00
+4,2,Gaming PC 2,"Intel i5, 16GB RAM, GTX 1660",2024-06-01 12:00:00
+5,3,Gaming PC 1,"Intel i9, 64GB RAM, RTX 3090",2024-06-01 12:00:00
+6,3,Gaming PC 2,"Intel i7, 32GB RAM, RTX 3080",2024-06-01 12:00:00
+7,4,Gaming PC 1,"AMD Ryzen 7, 16GB RAM, RX 5700",2024-06-01 12:00:00
+8,4,Gaming PC 2,"Intel i9, 32GB RAM, RTX 3070",2024-06-01 12:00:00
+9,5,Gaming PC 1,"Intel i5, 16GB RAM, GTX 1650",2024-06-01 12:00:00
+10,5,Gaming PC 2,"Intel i7, 32GB RAM, RTX 3060",2024-06-01 12:00:00

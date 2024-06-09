@@ -1,0 +1,10 @@
+id,name,country,city,address,tags,rating,default_admin,working_hours,created_at1,Cyber Club,USA,San Francisco,123 Main St,cyber,gaming,4.8,admin123,10:00-22:00,2024-06-01 12:00:00
+2,Gamer's Haven,USA,New York,456 Elm St,gaming,arcade,4.7,admin456,09:00-23:00,2024-06-01 12:00:00
+3,Esports Arena,USA,Los Angeles,789 Pine St,esports,tournaments,4.9,admin789,08:00-24:00,2024-06-01 12:00:00
+4,Game Zone,USA,Chicago,101 Maple St,console,pc,4.6,admin101,11:00-21:00,2024-06-01 12:00:00
+5,Playground,USA,Houston,202 Oak St,virtual,reality,4.7,admin202,12:00-22:00,2024-06-01 12:00:00
+6,Arcade House,USA,Dallas,303 Cedar St,arcade,gaming,4.5,admin303,10:00-23:00,2024-06-01 12:00:00
+7,Virtual World,USA,San Diego,404 Palm St,virtual,reality,4.4,admin404,11:00-22:00,2024-06-01 12:00:00
+8,Console Corner,USA,San Jose,505 Oak St,console,gaming,4.3,admin505,09:00-21:00,2024-06-01 12:00:00
+9,PC Paradise,USA,Austin,606 Pine St,pc,gaming,4.2,admin606,12:00-24:00,2024-06-01 12:00:00
+10,Game Empire,USA,San Francisco,707 Maple St,gaming,arcade,4.9,admin707,10:00-22:00,2024-06-01 12:00:00
